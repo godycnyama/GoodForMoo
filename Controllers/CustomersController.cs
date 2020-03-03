@@ -9,7 +9,7 @@ using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("/api/customers")]
     [ApiController]
     public class CustomersController : ControllerBase
     {
@@ -18,14 +18,18 @@ namespace WebApplication1.Controllers
         {
             this._customersService = customersService;
         }
-        // GET: api/customers/getAllCustomers
-        [Route("api/customers/getAllCustomers")]
-        [HttpGet]
+        // GET: /api/customers/getAllCustomers
+        [HttpGet("getAllCustomers")]
         public async Task<IActionResult> GetAllCustomers()
         {
             try
             {
                 var customers = await _customersService.GetAllCustomers();
+                var _customers = customers.ToArray();
+                if (_customers.Length == 0)
+                {
+                    return BadRequest("No customers found!");
+                }
                 return Ok(customers);
             }
             catch (Exception ex)
@@ -34,14 +38,18 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // GET: api/customers/getCustomersBy
-        [Route("api/customers/getCustomersBy")]
-        [HttpGet]
+        // GET: /api/customers/getCustomersBy
+        [HttpGet("getCustomersBy")]
         public async Task<IActionResult> GetCustomersBy([FromQuery] SearchParameters searchParameters)
         {
             try
             {
                 var customers = await _customersService.GetCustomersBy(searchParameters);
+                var _customers = customers.ToArray();
+                if (_customers.Length == 0)
+                {
+                    return BadRequest("No customers found!");
+                }
                 return Ok(customers);
             }
             catch (Exception ex)
@@ -51,14 +59,17 @@ namespace WebApplication1.Controllers
         }
 
 
-        // GET: api/customers/5
-        [Route("api/customers/{id}")]
-        [HttpGet]
+        // GET: /api/customers/5
+        [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
             try
             {
                 var customer = await _customersService.GetCustomer(id);
+                if (customer == null)
+                {
+                    return BadRequest("Customer not found!");
+                }
                 return Ok(customer);
             }
             catch (Exception ex)
@@ -67,16 +78,10 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // POST: api/customers
-        [Route("api/customers")]
+        // POST: /api/customers
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] CustomerDTO customerDTO)
+        public async Task<IActionResult> Post([FromForm] CustomerDTO customerDTO)
         {
-            
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             try
             {
                 await _customersService.AddCustomer(customerDTO);
@@ -88,16 +93,10 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // PUT: api/customers/5
-        [Route("api/customers/{id}")]
-        [HttpPut]
-        public async Task<IActionResult> Put(int id, [FromBody] CustomerDTO customerDTO)
+        // PUT: /api/customers/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromForm] CustomerDTO customerDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
                 await _customersService.UpdateCustomer(id,customerDTO);
@@ -109,9 +108,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // DELETE: api/customers/5
-        [Route("api/customers/{id}")]
-        [HttpDelete]
+        // DELETE: /api/customers/5
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try

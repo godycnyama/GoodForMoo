@@ -129,8 +129,9 @@ return (
   <Transition>
     <Subscribe to = {[_OrdersContainer]}>
       {ordersStore => {
-        const { state: { selectedOrder }} = ordersStore;
-        setCurrentOrder(selectedOrder);
+        const { state: { _selectedOrder }} = ordersStore;
+        console.log(_selectedOrder)
+        setCurrentOrder(_selectedOrder);
 
         return (
          <Grid container>
@@ -138,14 +139,14 @@ return (
             <Paper>
               <Formik
                   initialValues={{ 
-                    product: selectedOrder.product,
-                    quantity: selectedOrder.quantity, 
-                    customer: selectedOrder.customer,
-                    deliveryAddress: selectedOrder.deliveryAddress, 
-                    deliveryDate: selectedOrder.deliveryDate,
+                    product: _selectedOrder.OrderDetails[0].Product.ProductName,
+                    quantity: _selectedOrder.OrderDetails[0].Quantity, 
+                    customer: _selectedOrder.CustomerName,
+                    deliveryAddress: _selectedOrder.DeliveryAddress, 
+                    deliveryDate: _selectedOrder.DeliveryDate,
                     }}
                   onSubmit={(values, { setSubmitting }) => {
-                     setSubmitting(true);
+                     //setSubmitting(true);
                      updateOrder(values);
                   }}
   
@@ -163,7 +164,6 @@ return (
                         .max(200),
                     deliveryDate: Yup.string()
                         .required('Required')
-                        .max(50)
                   })}
                 >
                   {(props) => {
@@ -259,7 +259,7 @@ return (
                                     label="Delivery Date"
                                     name="deliveryDate"
                                     component={DatePicker}
-                                    format="dd/MM/yyyy"
+                                    format="dd MMMM yyyy"
                                     fullWidth
                                     />
                             </Grid>

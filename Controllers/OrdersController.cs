@@ -10,7 +10,7 @@ using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("/api/orders")]
     [ApiController]
     public class OrdersController : ControllerBase
     {
@@ -20,15 +20,15 @@ namespace WebApplication1.Controllers
             this._ordersService = ordersService;
         }
 
-        // GET: api/orders/getAllOrders
-        [Route("api/orders/getAllOrders")]
-        [HttpGet]
+        // GET: /api/orders/getAllOrders
+        [HttpGet("getAllOrders")]
         public async Task<IActionResult> GetAllOrders()
         {
             try
             {
                 var orders = await _ordersService.GetAllOrders();
-                if (orders == null)
+                var _orders = orders.ToArray();
+                if (_orders.Length == 0)
                 {
                     return BadRequest("No orders found!");
                 }
@@ -40,15 +40,15 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // GET: api/orders/getOrdersBy
-        [Route("api/orders/getOrdersBy")]
-        [HttpGet]
+        // GET: /api/orders/getOrdersBy
+        [HttpGet("getOrdersBy")]
         public async Task<IActionResult> GetOrdersBy([FromQuery] SearchParameters searchParameters)
         {
             try
             {
                 var orders = await _ordersService.GetOrdersBy(searchParameters);
-                if (orders == null)
+                var _orders = orders.ToArray();
+                if (_orders.Length == 0)
                 {
                     return BadRequest("No orders found!");
                 }
@@ -60,9 +60,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // GET: api/orders/5
-        [Route("api/orders/{id}")]
-        [HttpGet]
+        // GET: /api/orders/5
+        [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
             var order = await _ordersService.GetOrder(id);
@@ -73,19 +72,13 @@ namespace WebApplication1.Controllers
             return Ok(order);
         }
 
-        // POST: api/orders
-        [Route("api/orders")]
+        // POST: /api/orders
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] OrderDTO orderDAO)
+        public async Task<IActionResult> Post([FromForm] OrderDTO orderDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            } 
-
             try
             {
-                await _ordersService.AddOrder(orderDAO);
+                await _ordersService.AddOrder(orderDTO);
                 return Ok("Order record added successfully");
             }
             catch (Exception ex)
@@ -94,19 +87,13 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // PUT: api/orders/5
-        [Route("api/orders/{id}")]
-        [HttpPut]
-        public async Task<IActionResult> Put(int id, [FromBody] OrderDTO orderDAO)
+        // PUT: /api/orders/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromForm] OrderDTO orderDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            } 
-
             try
             {
-                await _ordersService.UpdateOrder(id, orderDAO);
+                await _ordersService.UpdateOrder(id, orderDTO);
                 return Ok("Order record updated successfully");
             }
             catch (Exception ex)
@@ -115,9 +102,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // DELETE: api/orders/5
-        [Route("api/orders/{id}")]
-        [HttpDelete]
+        // DELETE: /api/orders/5
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try

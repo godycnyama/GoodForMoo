@@ -8,8 +8,8 @@ using WebApplication1.DataModels;
 using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
-{
-    [Route("api/[controller]")]
+{   
+    [Route("/api/products")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
@@ -19,15 +19,16 @@ namespace WebApplication1.Controllers
             this._productsService = productsService;
             
         }
-        
-        [Route("api/orders/getAllProducts")]
-        [HttpGet]
+
+        // GET: /api/products/getAllProducts
+        [HttpGet("getAllProducts")]
         public async Task<IActionResult> GetAllProducts()
         {
             try
             {
                 var products = await _productsService.GetAllProducts();
-                if(products == null)
+                var _products = products.ToArray();
+                if(_products.Length == 0)
                 {
                     return BadRequest("No products found!");
                 }
@@ -39,14 +40,15 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [Route("api/orders/getProductsBy")]
-        [HttpGet]
+        // GET: /api/products/getProductsBy
+        [HttpGet("getProductsBy")]
         public async Task<IActionResult> GetProductsBy()
         {
             try
             {
                 var products = await _productsService.GetAllProducts();
-                if (products == null)
+                var _products = products.ToArray();
+                if (_products.Length == 0)
                 {
                     return BadRequest("No products found!");
                 }
@@ -58,9 +60,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // GET: api/products/5
-        [Route("api/products/{id}")]
-        [HttpGet]
+        // GET: /api/products/5
+        [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
             try
@@ -68,7 +69,7 @@ namespace WebApplication1.Controllers
                 var product = await _productsService.GetProduct(id);
                 if(product == null)
                 {
-                    return BadRequest("No product found!");
+                    return BadRequest("Product not found!");
                 }
                 return Ok(product);
 
@@ -79,19 +80,13 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // POST: api/products
-        [Route("api/products")]
+        // POST: /api/products
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] ProductDTO productDAO)
+        public async Task<IActionResult> Post([FromForm] ProductDTO productDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                await _productsService.AddProduct(productDAO);
+                await _productsService.AddProduct(productDTO);
                 return Ok("Product record added successfully");
             }
             catch (Exception ex)
@@ -100,19 +95,13 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // PUT: api/products/5
-        [Route("api/products/{id}")]
-        [HttpPut]
-        public async Task<IActionResult> Put(int id, [FromBody] ProductDTO productDAO)
+        // PUT: /api/products/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromForm] ProductDTO productDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             try
             {
-                await _productsService.UpdateProduct(id, productDAO);
+                await _productsService.UpdateProduct(id, productDTO);
                 return Ok("Product record updated successfully");
             }
             catch (Exception ex)
@@ -121,9 +110,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // DELETE: api/products/5
-        [Route("api/products/{id}")]
-        [HttpDelete]
+        // DELETE: /api/products/5
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try

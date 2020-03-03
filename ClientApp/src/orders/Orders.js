@@ -84,7 +84,7 @@ const Orders = () => {
     const [searchBy, setSearchBy] = useState(null);
     const [searchTerm, setSearchTerm] = useState(null);
     const [orderBy, setOrderBy] = useState(null);
-    const [orders, setOrders] = useState(sampleOrders);
+    const [orders, setOrders] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
     const [perPage, setPerPage] = useState(5);
     const [pageTotal, setPageTotal] = useState(0);
@@ -225,6 +225,7 @@ const Orders = () => {
                 _setSearchTerm,
                 _setOrderBy } = ordersStore;
                 setOrders(_orders);
+                console.log(_orders);
                 setCurrentPage(_currentPage);
                 setPerPage(_perPage);
                 setPageTotal(_pageTotal);

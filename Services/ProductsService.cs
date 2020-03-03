@@ -63,7 +63,7 @@ namespace WebApplication1.Services
         public async Task AddProduct(ProductDTO productDTO)
         {
             //check if product already exists
-            Product product = await db.Products.Where(i => i.ProductName == productDTO.ProductName).FirstAsync();
+            Product product = await db.Products.FirstOrDefaultAsync(i => i.ProductName == productDTO.ProductName);
             if (product != null)
             {
                 throw new Exception("Product already exists");

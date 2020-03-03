@@ -25,8 +25,8 @@ namespace WebApplication1
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors();
-            services.AddMvc();
-            services.AddControllersWithViews();
+            //services.AddControllersWithViews();
+            services.AddControllers();
             services.AddDbContext<DataAccessContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("Moor-Database"));
@@ -40,6 +40,7 @@ namespace WebApplication1
             services.AddScoped<IProductsService, ProductsService>();
             services.AddScoped<ICustomersService, CustomersService>();
             services.AddScoped<IOrdersService, OrdersService>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -61,21 +62,26 @@ namespace WebApplication1
             app.UseSpaStaticFiles();
 
             app.UseRouting();
-            app.UseCors(builder => builder.WithOrigins("http://localhost:3000"));
+            app.UseCors(builder => builder.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+            /*
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");
             });
-            
+            */
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
 
                 if (env.IsDevelopment())
                 {
-                    spa.Options.StartupTimeout = TimeSpan.FromSeconds(200);
+                    spa.Options.StartupTimeout = TimeSpan.FromSeconds(2000);
                     spa.UseReactDevelopmentServer(npmScript: "start");
                     //spa.UseProxyToSpaDevelopmentServer("http://localhost:3000");
                 }

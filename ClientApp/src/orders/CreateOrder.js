@@ -4,7 +4,8 @@ import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
 import { KeyboardDatePicker } from '@material-ui/pickers';
-import { DatePicker } from 'formik-material-ui-pickers';
+//import { DatePicker } from 'formik-material-ui-pickers';
+import { FormikDatePicker } from '@dccs/react-formik-mui';
 import axios from 'axios';
 import {
   Formik, Form, Field, ErrorMessage,
@@ -16,7 +17,7 @@ import Button  from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
 import NumberFormat from 'react-number-format';
 import MaskedInput from 'react-text-mask';
-//import { DatePicker, DateTimePicker } from 'material-ui-formik-components/DatePicker';
+import { DatePicker } from 'material-ui-formik-components/DatePicker';
 import Transition from '../shared/Transition';
 //import { BASE_URL } from '../shared/Constants';
 import MessageDialog from '../shared/MessageDialog';
@@ -113,7 +114,7 @@ const CreateOrder = () => {
       setOpenLoading(true);
   };
   */
-  
+
   const handleMessageClose = value => {
       setOpenMessage(false);
       setConfirmMessage(value);
@@ -139,10 +140,11 @@ return (
                     quantity: '', 
                     customer: '',
                     deliveryAddress: '', 
-                    deliveryDate: '',
+                    deliveryDate: null,
                     }}
                 onSubmit={(values, { setSubmitting }) => {
                    //setSubmitting(true);
+                   console.log(values);
                    addOrder(values);
                 }}
 
@@ -160,7 +162,6 @@ return (
                         .max(200),
                     deliveryDate: Yup.string()
                         .required('Required')
-                        .max(50)
                 })}
               >
                 {(props) => {
@@ -251,14 +252,15 @@ return (
                             />
                         </Grid>
                         <Grid item xs={12}>
-                            <Field 
-                              component={DatePicker} 
-                              name="deliveryDate" 
-                              label="Delivery Date"
-                              format="dd/mm/yyyy"
-                              value={values.deliveryDate} 
-                              fullWidth
-                              />
+                            <Field
+                                type="text"
+                                label="Delivery Date"
+                                name="deliveryDate"
+                                value={values.deliveryDate}
+                                component={DatePicker}
+                                format="dd MMMM yyyy"
+                                fullWidth
+                                />
                         </Grid>
                       </Grid>
                         <br></br>
