@@ -67,14 +67,7 @@ namespace WebApplication1
             {
                 endpoints.MapControllers();
             });
-            /*
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller}/{action=Index}/{id?}");
-            });
-            */
+            
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
