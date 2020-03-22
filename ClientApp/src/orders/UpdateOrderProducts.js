@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
@@ -27,8 +27,9 @@ import NumberFormat from 'react-number-format';
 import MaskedInput from 'react-text-mask';
 import { DatePicker } from 'material-ui-formik-components/DatePicker';
 import Transition from '../shared/Transition';
-import { BASE_URL } from '../shared/Constants';
+import { Subscribe } from 'unstated';
 import _OrdersContainer from './OrdersContainer';
+import { BASE_URL } from '../shared/Constants';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
 import { openToast } from '../utils/utility';
@@ -37,6 +38,8 @@ import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
 import StepLabel from '@material-ui/core/StepLabel';
 import StepContent from '@material-ui/core/StepContent';
+import { useParams } from 'react-router-dom';
+
 
 const useStyles = makeStyles({
   root: {
@@ -70,7 +73,9 @@ const unitOfMeasureOptions = [
   'Case'
   ]
 
-const CreateOrder = () => {
+const UpdateOrderProducts = () => {
+    const location = useLocation();
+    const [currentOrder, setCurrentOrder] = useState(null);
     const [activeStep, setActiveStep] = useState(0);
     const [openMessage, setOpenMessage] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState(false);
@@ -78,27 +83,20 @@ const CreateOrder = () => {
     const [openLoading, setOpenLoading] = useState(false);
     //const [products, setProducts] = useState([]);
     //const [customers, setCustomers] = useState([]);
-    const [cart, setCart] = useState([]);
-    const [order, setOrder] = useState([]); //order from database
+    const [cart, setCart] = useState([...location.state.orderDetails]);
+    const [subTotal, setSubTotal] = useState(0);
+    const [tax, setTax] = useState(0);
+    const [total, setTotal] = useState(0);
     const [confirmLoading, setConfirmLoading] = useState(false);
     //const BASE_URL = `${window.location.protocol}//${window.location.host}`;
+    const { id } = useParams();
 
     let products = [];
     let customers = [];
+
+    //let cart = [];
     const history = useHistory();
     const classes = useStyles();
-
-    const handleNext = () => {
-      setActiveStep(prevActiveStep => prevActiveStep + 1);
-    };
-  
-    const handleBack = () => {
-      setActiveStep(prevActiveStep => prevActiveStep - 1);
-    };
-  
-    const handleReset = () => {
-      setActiveStep(0);
-    };
 
     const [{data: getProductsData, loading: getProductsLoading, error: getProductsError }, executeProductsGet] = useAxios({
       url: BASE_URL,
@@ -108,6 +106,13 @@ const CreateOrder = () => {
     });
 
     const [{data: getCustomersData, loading: getCustomersLoading, error: getCustomersError }, executeCustomersGet] = useAxios({
+      url: BASE_URL,
+      method: "GET"
+    },{
+        manual: true
+    });
+
+    const [{data: getOrderDetailsData, loading: getOrderDetailsLoading, error: getOrderDetailsError }, executeOrderDetailsGet] = useAxios({
       url: BASE_URL,
       method: "GET"
     },{
@@ -128,26 +133,34 @@ const CreateOrder = () => {
        })
     }
 
+    const getOrderDetails = () => {
+      executeOrderDetailsGet({
+        method: 'get',
+        url: BASE_URL + `/api/orderDetails?$filter=OrderID eq ${location.state.OrderID}`,
+       })
+    }
+
     useEffect(() => {
       getProducts();
       getCustomers();
     },[]);
 
-    const [{data: postData, loading: postLoading, error: postError }, executePost] = useAxios({
-        url: BASE_URL,
-        method: "POST"
+    const [{data: getProductsCustomersData, loading: getProductsCustomersLoading, error: getProductsCustomersError}, executeProductsCustomersGet] = useAxios({
+      url: BASE_URL,
+      method: "GET"
     },{
         manual: true
     });
 
-    const addOrder = (orderData) => {
-        executePost({
-            method: 'post',
-            url: BASE_URL + '/api/orders',
-            data: {
-              ...orderData,
-              orderDetails: [...cart]
-            }})
+    const [{data: putData, loading: putLoading, error: putError}, executePatch] = useAxios({
+        url: BASE_URL,
+        method: "PATCH"
+    },{
+        manual: true
+    });
+
+    const next = () => {
+      history.push('/update-order-customer', {...location.state, customers: [...customers], orderDetails: [...cart]});
     }
 
     const addToCart = (product) => {
@@ -163,12 +176,14 @@ const CreateOrder = () => {
         if(products[i].ProductID === product.product){
           let _product = {
             ...products[i],
-            Quantity: product.quantity
+            Quantity: parseInt(product.quantity)
           };
          
           let list = [...cart];
           list.push(_product);
           setCart(list);
+          //cart = [...list];
+          console.log(cart);
         }
       }
     }
@@ -179,11 +194,12 @@ const CreateOrder = () => {
         if(list[i].productID === product.productID){
           list.splice(i,1);
           setCart(list);
+          //cart = [...list];
+          openToast("success", "Product has been removed from order" );
           return
         }
       }
     }
-
   /*
   const openMessageDialog = () => {
       setMessageDescription("Order created successfully!");
@@ -201,40 +217,56 @@ const CreateOrder = () => {
   };
   
 
-  if(postError) {
-      console.log(postError.response);
-      openToast("error", postError.response.data.message );
+  if(putError) {
+      console.log(putError.response);
+      openToast("error", putError.response.data.message );
   }
 
-  if(postData) {
-    console.log(postData);
-    openToast("success", postData.message );
-    history.push('/order-success', {...postData.order});
+  if(putData) {
+    openToast("success", putData.message );
+    history.push('/order-success', {...putData.order});
   }
 
   if(getProductsError) {
+    console.log(getProductsError.response);
     openToast("error", getProductsError.response.data.message );
   }
 
   if(getCustomersError) {
+    console.log(getCustomersError.response);
     openToast("error", getCustomersError.response.data.message );
+  }
+
+  if(getOrderDetailsError) {
+    console.log(getOrderDetailsError.response);
+    openToast("error", getOrderDetailsError.response.data.message );
   }
 
   if(getProductsData) {
     products = [...getProductsData.value];
+    console.log(products);
   }
 
   if(getCustomersData) {
     customers = [...getCustomersData.value];
+    console.log(customers);
   }
+
 
 return (
   <Transition>
+    <Subscribe to = {[_OrdersContainer]}>
+    {ordersStore => {
+      const { state: { _selectedOrder }} = ordersStore;
+      console.log(_selectedOrder)
+      setCurrentOrder(_selectedOrder);
+      let title = `Update Order#: ${location.state.OrderID} Products`;
+    return (
       <Grid container>
         <Grid item xs={12} lg={8}>
           <Paper>
             <Typography variant="h6" style={{margin: 15}} >
-               Create Order
+               {title}
             </Typography>
             <Divider/>
             <Button
@@ -246,15 +278,6 @@ return (
                 Back
             </Button>
             <br></br>
-            <Stepper activeStep={activeStep} alternativeLabel orientation="horizontal">
-              <Step>
-                <StepLabel>Add Products</StepLabel>
-              </Step>
-              <Step>
-                <StepLabel>Add Customer Details</StepLabel>
-              </Step>
-            </Stepper>
-            {activeStep === 0 && (<div>
             <Paper className={classes.root}>
               <Table className={classes.table}>
                 <TableHead>
@@ -303,7 +326,6 @@ return (
                   quantity: '', 
                   }}
               onSubmit={(values) => {
-                console.log("Add To Cart called")
                 addToCart(values);
               }}
 
@@ -378,7 +400,7 @@ return (
                       </Grid>
                     </Grid>
                       <br></br>
-                      <Button variant="contained" color="primary" disabled={cart.length === 0} style={{marginRight: 15,textTransform: 'none'}} onClick={() => {handleNext()}}>
+                      <Button variant="contained" color="primary" disabled={cart.length === 0} style={{marginRight: 15,textTransform: 'none'}} onClick={() => {next()}}>
                         Next
                       </Button>
                       <br></br>
@@ -386,130 +408,15 @@ return (
                   </form>
                 );
               }}
-            </Formik></div>)}
-            {activeStep === 1 && (<Formik
-              initialValues={{ 
-                  customerID: '',
-                  deliveryAddress: '', 
-                  deliveryDate: null,
-                  orderStatus: '',
-                  }}
-              onSubmit={(values, { setSubmitting }) => {
-                console.log('Submission Called')
-                 addOrder(values);
-              }}
-
-              validationSchema={Yup.object().shape({
-                  customerID: Yup.string()
-                      .required('Required'),
-                  deliveryAddress: Yup.string()
-                      .required('Required')
-                      .max(200),
-                  deliveryDate: Yup.string()
-                      .required('Required'),
-                  orderStatus: Yup.string()
-                      .required('Required')
-                      .max(50),
-              })}
-            >
-              {(props) => {
-                const {
-                  values,
-                  touched,
-                  errors,
-                  dirty,
-                  isSubmitting,
-                  handleChange,
-                  handleBlur,
-                  handleSubmit,
-                  handleReset,
-                } = props;
-                return (
-                  <form onSubmit={handleSubmit} style={{margin: 15}} noValidate>
-                    <Grid container spacing={2}>
-                      <Grid item xs={8}>
-                          <TextField
-                              label="Select Customer"
-                              name="customerID"
-                              select
-                              value={values.customerID}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              helperText={(errors.customerID && touched.customerID) && errors.customerID}
-                              margin="normal"
-                              fullWidth
-                              >
-                              {customers.map((option, index) => (
-                                <MenuItem key={index} value={option.CustomerID}>
-                                    {option.CustomerName}
-                                </MenuItem>
-                                ))}
-                          </TextField>
-                      </Grid>
-                      <Grid item xs={8}>
-                          <TextField
-                              label="Delivery Address"
-                              name="deliveryAddress"
-                              multiline
-                              rows="4"
-                              value={values.deliveryAddress}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              helperText={(errors.deliveryAddress && touched.deliveryAddress) && errors.deliveryAddress}
-                              margin="normal"
-                              fullWidth
-                          />
-                      </Grid>
-                      <Grid item xs={8}>
-                          <Field
-                              type="text"
-                              label="Delivery Date"
-                              name="deliveryDate"
-                              value={values.deliveryDate}
-                              component={DatePicker}
-                              format="dd MMMM yyyy"
-                              fullWidth
-                              />
-                      </Grid>
-                      <Grid item xs={8}>
-                          <TextField
-                              label="Order Status"
-                              name="orderStatus"
-                              select
-                              value={values.orderStatus}
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              helperText={(errors.orderStatus && touched.orderStatus) && errors.orderStatus}
-                              margin="normal"
-                              fullWidth
-                              >
-                                  {orderStatusOptions.map(option => (
-                                      <MenuItem key={option} value={option}>
-                                          {option}
-                                      </MenuItem>
-                                      ))}
-                          </TextField>
-                      </Grid>
-                    </Grid>
-                      <br></br>
-                      <Button variant="contained" color="primary" style={{marginRight: 15,textTransform: 'none'}} onClick={() => {handleBack()}}>
-                        Back
-                      </Button>
-                      <Button type="submit" variant="contained" color="primary" style={{textTransform: 'none'}}>
-                        Submit
-                      </Button>
-                      <br></br>
-                      <br></br>
-                  </form>
-                );
-              }}
-            </Formik>)}
+            </Formik>
             <MessageDialog confirmMessage={confirmMessage} open={openMessage} onClose={handleMessageClose}  description={messageDescription} />
-            <Loading open={postLoading || getProductsLoading || getCustomersLoading} />
+            <Loading open={putLoading || getProductsCustomersLoading || getOrderDetailsLoading} />
           </Paper>
         </Grid>
     </Grid>
+    )}}
+  </Subscribe>
 </Transition>
 )} 
 
-export default CreateOrder
+export default UpdateOrderProducts

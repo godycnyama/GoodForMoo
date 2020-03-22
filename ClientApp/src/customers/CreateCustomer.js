@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
@@ -8,8 +9,9 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import Transition from '../shared/Transition';
-//import { BASE_URL } from '../shared/Constants';
+import { BASE_URL } from '../shared/Constants';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
 import { openToast } from '../utils/utility';
@@ -22,7 +24,9 @@ const CreateCustomer = () => {
     const [messageDescription, setMessageDescription] = useState("");
     const [openLoading, setOpenLoading] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const BASE_URL = `${window.location.protocol}//${window.location.host}`
+    //const BASE_URL = `${window.location.protocol}//${window.location.host}`
+
+    const history = useHistory();
 
     const [{data: postData, loading: postLoading, error: postError}, executePost] = useAxios({
         url: BASE_URL,
@@ -37,7 +41,9 @@ const CreateCustomer = () => {
             url: BASE_URL + '/api/customers',
             data: {
               ...customerData
-            }})
+            },
+            headers: {'Content-Type':'application/json' }
+        })
     }
 
     /*
@@ -57,7 +63,8 @@ const CreateCustomer = () => {
     };
 
     if(postError) {
-        openToast("error", postError.message );
+        console.log(postError.response);
+        openToast("error", postError.response.data.message);
     }
 
     if(postData) {
@@ -73,7 +80,7 @@ return (
             <Formik
                 initialValues={{ 
                     customerName: '',
-                    address: '', 
+                    physicalAddress: '', 
                     town: '', 
                     postalCode: '',
                     province: '', 
@@ -82,27 +89,32 @@ return (
                     mobile: ''
                     }}
                 onSubmit={(values, { setSubmitting }) => {
-                   //setSubmitting(true);
+                   console.log("Submit customer called");
                    addCustomer(values);
                 }}
 
                 validationSchema={Yup.object().shape({
                     customerName: Yup.string()
-                        .required('Required'),
-                    address: Yup.string()
-                        .required('Required'),
-                    town: Yup.string()
-                        .required('Required'),
-                    postalCode: Yup.string()
-                        .required('Required'),
-                    province: Yup.string()
-                        .required('Required'),
-                    email: Yup.string()
-                        .required('Required'),
-                    telephone: Yup.number()
-                        .required('Required'),
-                    mobile: Yup.string()
                         .required('Required')
+                        .max(50),
+                    physicalAddress: Yup.string()
+                        .required('Required')
+                        .max(200),
+                    town: Yup.string()
+                        .required('Required')
+                        .max(50),
+                    postalCode: Yup.string()
+                        .required('Required')
+                        .max(20),
+                    province: Yup.string()
+                        .required('Required')
+                        .max(50),
+                    email: Yup.string()
+                        .max(50),
+                    telephone: Yup.string()
+                        .max(50),
+                    mobile: Yup.string()
+                        .max(50)
                 })}
               >
                 {(props) => {
@@ -123,6 +135,14 @@ return (
                          Add Customer
                       </Typography>
                       <Divider/>
+                      <Button
+                        variant="contained" 
+                        color="primary"
+                        style={{marginLeft: 15, marginTop: 15, textTransform: 'none'}}
+                        startIcon={<ArrowBackIcon/>}
+                        onClick={() => { history.goBack()}}>
+                            Back
+                      </Button>
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
                             <TextField
@@ -139,13 +159,13 @@ return (
                         <Grid item xs={12}>
                             <TextField
                                 label="Delivery Address"
-                                name="address"
+                                name="physicalAddress"
                                 multiline
                                 rows="4"
-                                value={values.address}
+                                value={values.physicalAddress}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                helperText={(errors.address && touched.address) && errors.address}
+                                helperText={(errors.physicalAddress && touched.physicalAddress) && errors.physicalAddress}
                                 margin="normal"
                                 fullWidth
                             />

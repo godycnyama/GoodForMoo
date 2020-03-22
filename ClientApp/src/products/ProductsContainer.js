@@ -2,31 +2,29 @@
 
 class ProductsContainer extends Container {
     state = {
-        _products: [
-            {
-                productID: 0,
-                productName: "Lawn Block",
-                unitPrice: "250",
-                currency: "R",
-                unitOfMeasure: "Sq.m",
-              },
-              {
-                productID: 1,
-                productName: "Lawn Block",
-                unitPrice: "250",
-                currency: "R",
-                unitOfMeasure: "Sq.m",
-              }
-        ],
+        _products: [],
         selectedProduct: {},
         _currentPage: 0,
         _pageTotal: 0,
         _perPage: 5,
         _searchBy:"All",
         _searchTerm: "",
-        _orderBy: "Product ID_Asc"
+        _orderBy: "ProductID asc",
+        _navigation: false,
     }
 
+    _setNavigation = navigation => {
+        this.setState({
+            _navigation: navigation
+        })
+    }
+
+    _resetNavigation = () => {
+        this.setState({
+             _navigation: false
+        })
+    }
+    
     _setSearchBy = searchBy => {
         this.setState({
             _searchBy: searchBy

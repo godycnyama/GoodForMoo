@@ -16,7 +16,10 @@ import ViewCustomer from './customers/ViewCustomer';
 import Customers from './customers/Customers';
 import CreateOrder from './orders/CreateOrder';
 import UpdateOrder from './orders/UpdateOrder';
+import UpdateOrderProducts from './orders/UpdateOrderProducts';
+import UpdateOrderCustomer from './orders/UpdateOrderCustomer';
 import ViewOrder from './orders/ViewOrder';
+import OrderSuccess from './orders/OrderSuccess';
 import Orders from './orders/Orders';
 import CreateProduct from './products/CreateProduct';
 import UpdateProduct from './products/UpdateProduct';
@@ -56,8 +59,17 @@ function App() {
                 <Route path="/update-order">
                   <UpdateOrder/>
                 </Route>
+                <Route path="/update-order-products">
+                  <UpdateOrderProducts/>
+                </Route>
+                <Route path="/update-order-customer">
+                  <UpdateOrderCustomer/>
+                </Route>
                 <Route path="/view-order">
                   <ViewOrder/>
+                </Route>
+                <Route path="/order-success">
+                  <OrderSuccess/>
                 </Route>
                 <Route exact path="/">
                   <Orders/>

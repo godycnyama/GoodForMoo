@@ -6,21 +6,12 @@ import AppBar from '@material-ui/core/AppBar';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Toolbar from '@material-ui/core/Toolbar';
 import MenuItem from '@material-ui/core/MenuItem';
-import Typography from '@material-ui/core/Typography';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import Hidden from '@material-ui/core/Hidden';
-import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu';
-import HomeIcon from '@material-ui/icons/Home';
-import SupervisedUserCircleIcon from '@material-ui/icons/SupervisedUserCircle';
-import PeopleIcon from '@material-ui/icons/People';
-import PeopleOutlineIcon from '@material-ui/icons/PeopleOutline';
-import ArrowForwardIosIcon from '@material-ui/icons/ArrowForwardIos';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import DashboardIcon from '@material-ui/icons/Dashboard';
-import LocationCityIcon from '@material-ui/icons/LocationCity';
 import EcoIcon from '@material-ui/icons/Eco';
 import ViewListIcon from '@material-ui/icons/ViewList';
 import GroupIcon from '@material-ui/icons/Group';
@@ -71,7 +62,7 @@ const Nav = ({children}) => {
       <CssBaseline />
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
-        <Hidden smUp>
+        <Hidden mdUp>
             <IconButton edge="start" color="inherit" aria-label="menu" onClick = {ToggleDrawer}>
               <MenuIcon />
             </IconButton>

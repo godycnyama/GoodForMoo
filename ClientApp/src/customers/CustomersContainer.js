@@ -2,35 +2,27 @@
 
 class CustomersContainer extends Container {
     state = {
-        _customers: [
-            {
-                CustomerID: 0,
-                CustomerName: "Wayne Stewart",
-                Address: "25 Betway Road",
-                Town: "Ballito",
-                PostalCode: "4420",
-                Telephone: "032 946 6892",
-                Mobile: "0786018623",
-                Email:"godycnyama@gmail.com"
-              },
-              {
-                CustomerID: 1,
-                CustomerName: "Wayne Stewart",
-                Address: "25 Betway Road",
-                Town: "Ballito",
-                PostalCode: "4420",
-                Telephone: "032 946 6892",
-                Mobile: "0786018623",
-                Email:"godycnyama@gmail.com"
-              }
-        ],
+        _customers: [],
         selectedCustomer: {},
         _currentPage: 0,
         _pageTotal: 0,
         _perPage: 5,
         _searchBy:"All",
         _searchTerm: "",
-        _orderBy: "Customer ID_Asc"
+        _orderBy: "CustomerID asc",
+        _navigation: false,
+    }
+
+    _setNavigation = navigation => {
+        this.setState({
+            _navigation: navigation
+        })
+    }
+
+    _resetNavigation = () => {
+        this.setState({
+             _navigation: false
+        })
     }
 
     _setSearchBy = searchBy => {

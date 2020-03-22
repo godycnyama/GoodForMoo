@@ -3,33 +3,36 @@ import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
 import Typography from '@material-ui/core/Typography';
-//import axios from 'axios';
+import { useHistory } from 'react-router-dom';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button  from '@material-ui/core/Button';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MenuItem from '@material-ui/core/MenuItem';
 import NumberFormat from 'react-number-format';
 import Transition from '../shared/Transition';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
 import { openToast } from '../utils/utility';
+import { BASE_URL } from '../shared/Constants';
 import useAxios from 'axios-hooks';
 
 const currencyOptions = [
-    'R',
-    'USD',
-    'BP',
-    'Pula',
+    'R'
   ]
 
 const unitOfMeasureOptions = [
-    'Sq.m',
-    'Sq.f',
-    'Sq.in',
-    'KG',
-    'L',
-    'M',
+  'Sq m',
+  'Sq f',
+  'Sq in',
+  'KG',
+  'L',
+  'M',
+  'Each',
+  'Pack',
+  'Box',
+  'Case'
   ]
 const CreateProduct = () => {
   const [openMessage, setOpenMessage] = useState(false);
@@ -37,7 +40,9 @@ const CreateProduct = () => {
   const [messageDescription, setMessageDescription] = useState("");
   const [openLoading, setOpenLoading] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const BASE_URL = `${window.location.protocol}//${window.location.host}`
+  //const BASE_URL = `${window.location.protocol}//${window.location.host}`
+
+  const history = useHistory();
 
   const [{data: postData, loading: postLoading, error: postError}, executePost] = useAxios({
         url: BASE_URL,
@@ -52,7 +57,9 @@ const CreateProduct = () => {
             url: BASE_URL + '/api/products',
             data: {
               ...productData
-            }})
+            },
+            headers: {'Content-Type':'application/json' }
+          })
     }
 
   
@@ -72,10 +79,12 @@ const CreateProduct = () => {
   
 
   if(postError) {
-      openToast("error", postError.message );
+    console.log(postError.response);
+      openToast("error", postError.response.data.message );
   }
 
   if(postData) {
+    console.log(postData);
       openToast("success", postData.message );
   }
 
@@ -89,7 +98,7 @@ return (
                     productName: '',
                     unitPrice: '', 
                     currency: 'R',
-                    unitOfMeasure: 'Sq.m', 
+                    unitOfMeasure: 'Sq m', 
                     }}
                 onSubmit={(values, { setSubmitting }) => {
                   console.log('Submit clicked');
@@ -129,6 +138,14 @@ return (
                          Add Product
                       </Typography>
                       <Divider/>
+                      <Button
+                        variant="contained" 
+                        color="primary"
+                        style={{marginLeft: 15, marginTop: 15, textTransform: 'none'}}
+                        startIcon={<ArrowBackIcon/>}
+                        onClick={() => { history.goBack()}}>
+                          Back
+                      </Button>
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
                             <TextField

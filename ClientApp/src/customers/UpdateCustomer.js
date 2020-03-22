@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
@@ -8,10 +9,11 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import { Subscribe } from 'unstated';
 import _CustomersContainer  from './CustomersContainer';
 import Transition  from '../shared/Transition';
-//import { BASE_URL } from '../shared/Constants';
+import { BASE_URL } from '../shared/Constants';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
 import { openToast } from '../utils/utility';
@@ -24,23 +26,26 @@ const UpdateCustomer = () => {
     const [messageDescription, setMessageDescription] = useState("");
     const [openLoading, setOpenLoading] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const BASE_URL = `${window.location.protocol}//${window.location.host}`
+    //const BASE_URL = `${window.location.protocol}//${window.location.host}`
 
-    const [{data: putData, loading: putLoading, error: putError}, executePut] = useAxios({
+    const history = useHistory();
+    const location = useLocation();
+    const [{data: putData, loading: putLoading, error: putError}, executePatch] = useAxios({
         url: BASE_URL,
-        method: "PUT"
+        method: "PATCH"
     },{
         manual: true
     });
     
     const updateCustomer = (customerData) => {
-        executePut({
-            method: 'put',
-            url: BASE_URL + "/api/customers/" + currentCustomer.customerID ,
+        executePatch({
+            method: 'patch',
+            url: BASE_URL + `/api/customers(${location.state.CustomerID})`,
             data: {
-                customerID: currentCustomer.customerID,
-                customerDAO: customerData
-            }});
+                ...customerData
+            },
+            headers: {'Content-Type':'application/json' }
+            });
     }
     /*
     const openMessageDialog = () => {
@@ -58,7 +63,7 @@ const UpdateCustomer = () => {
     };
 
     if(putError) {
-        openToast("error", putError.message );
+        openToast("error", putError.response.data.message);
     }
 
     if(putData) {
@@ -77,14 +82,14 @@ return (
             <Paper>
               <Formik
                   initialValues={{ 
-                    customerName: selectedCustomer.customerName,
-                    address: selectedCustomer.address, 
-                    town: selectedCustomer.town, 
-                    postalCode: selectedCustomer.postalCode,
-                    province: selectedCustomer.province, 
-                    email: selectedCustomer.email,
-                    telephone: selectedCustomer.telephone,
-                    mobile: selectedCustomer.mobile
+                    customerName: location.state.CustomerName,
+                    physicalAddress: location.state.PhysicalAddress, 
+                    town: location.state.Town, 
+                    postalCode: location.state.PostalCode,
+                    province: location.state.Province, 
+                    email: location.state.Email,
+                    telephone: location.state.Telephone,
+                    mobile: location.state.Mobile
                     }}
                   onSubmit={(values, { setSubmitting }) => {
                      //setSubmitting(true);
@@ -93,21 +98,26 @@ return (
   
                   validationSchema={Yup.object().shape({
                     customerName: Yup.string()
-                        .required('Required'),
-                    address: Yup.string()
-                        .required('Required'),
-                    town: Yup.string()
-                        .required('Required'),
-                    postalCode: Yup.string()
-                        .required('Required'),
-                    province: Yup.string()
-                        .required('Required'),
-                    email: Yup.string()
-                        .required('Required'),
-                    telephone: Yup.number()
-                        .required('Required'),
-                    mobile: Yup.string()
                         .required('Required')
+                        .max(50),
+                    physicalAddress: Yup.string()
+                        .required('Required')
+                        .max(200),
+                    town: Yup.string()
+                        .required('Required')
+                        .max(50),
+                    postalCode: Yup.string()
+                        .required('Required')
+                        .max(20),
+                    province: Yup.string()
+                        .required('Required')
+                        .max(50),
+                    email: Yup.string()
+                        .max(50),
+                    telephone: Yup.string()
+                        .max(50),
+                    mobile: Yup.string()
+                        .max(50)
                   })}
                 >
                   {(props) => {
@@ -128,6 +138,14 @@ return (
                             Update Customer
                         </Typography>
                         <Divider/>
+                        <Button
+                            variant="contained" 
+                            color="primary"
+                            style={{marginLeft: 15, marginTop: 15, textTransform: 'none'}}
+                            startIcon={<ArrowBackIcon/>}
+                            onClick={() => { history.goBack()}}>
+                                Back
+                        </Button>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
                                 <TextField
@@ -144,13 +162,13 @@ return (
                             <Grid item xs={12}>
                                 <TextField
                                     label="Delivery Address"
-                                    name="address"
+                                    name="physicalAddress"
                                     multiline
                                     rows="4"
-                                    value={values.address}
+                                    value={values.physicalAddress}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    helperText={(errors.address && touched.address) && errors.address}
+                                    helperText={(errors.physicalAddress && touched.physicalAddress) && errors.physicalAddress}
                                     margin="normal"
                                     fullWidth
                                 />

@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
@@ -8,6 +9,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import TextField from '@material-ui/core/TextField';
 import Button  from '@material-ui/core/Button';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MenuItem from '@material-ui/core/MenuItem';
 import { Subscribe } from 'unstated';
 import _ProductsContainer  from './ProductsContainer';
@@ -16,22 +18,24 @@ import Transition  from '../shared/Transition';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
 import { openToast } from '../utils/utility';
+import { BASE_URL } from '../shared/Constants';
 import useAxios from 'axios-hooks';
 
 const currencyOptions = [
-    'R',
-    'USD',
-    'BP',
-    'Pula',
+    'R'
   ]
 
 const unitOfMeasureOptions = [
-    'Sq.m',
-    'Sq.f',
-    'Sq.in',
+    'Sq m',
+    'Sq f',
+    'Sq in',
     'KG',
     'L',
     'M',
+    'Each',
+    'Pack',
+    'Box',
+    'Case'
   ]
 
 const UpdateProduct = () => {
@@ -41,23 +45,27 @@ const UpdateProduct = () => {
     const [messageDescription, setMessageDescription] = useState("");
     const [openLoading, setOpenLoading] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const BASE_URL = `${window.location.protocol}//${window.location.host}`;
+    //const BASE_URL = `${window.location.protocol}//${window.location.host}`;
+    const history = useHistory();
+    const location = useHistory();
 
-    const [{data: putData, loading: putLoading, error: putError}, executePut] = useAxios({
+    const [{data: putData, loading: putLoading, error: putError}, executePatch] = useAxios({
         url: BASE_URL,
-        method: "PUT"
+        method: "PATCH"
     },{
         manual: true
     });
     
     const updateProduct = (productData) => {
-        executePut({
-            method: 'put',
-            url: BASE_URL + "/api/products/" + currentProduct.ProductID ,
+        console.log(productData);
+        executePatch({
+            method: 'patch',
+            url: BASE_URL + `/api/products(${location.state.ProductID})`,
             data: {
-                productID: currentProduct.ProductID,
-                productDTO: productData
-            }});
+                ...productData
+            },
+            headers: {'Content-Type':'application/json' }
+        });
     }
     /*
     const openMessageDialog = () => {
@@ -75,10 +83,12 @@ const UpdateProduct = () => {
     };
 
     if(putError) {
-        openToast("error", putError.message );
+        console.log(putError.response);
+        openToast("error", putError.response.data.message );
     }
 
     if(putData) {
+        console.log(putData);
         openToast("success", putData.message );
     }
 return (
@@ -86,17 +96,18 @@ return (
     <Subscribe to = {[_ProductsContainer]}>
       {productsStore => {
         const { state: { selectedProduct }} = productsStore;
-
+        console.log(selectedProduct);
+        setCurrentProduct(selectedProduct);
         return (
          <Grid container>
           <Grid item xs={12} lg={6}>
             <Paper>
               <Formik
                   initialValues={{ 
-                    productName: selectedProduct.productName,
-                    unitPrice: selectedProduct.unitPrice, 
-                    currency: selectedProduct.currency,
-                    unitOfMeasure: selectedProduct.unitOfMeasure
+                    productName: location.state.ProductName,
+                    unitPrice: location.state.UnitPrice, 
+                    currency: location.state.Currency,
+                    unitOfMeasure: location.state.UnitOfMeasure
                     }}
                   onSubmit={(values, { setSubmitting }) => {
                      //setSubmitting(true);
@@ -135,6 +146,14 @@ return (
                             Update Product
                         </Typography>
                         <Divider/>
+                        <Button
+                            variant="contained" 
+                            color="primary"
+                            style={{marginLeft: 15, marginTop: 15, textTransform: 'none'}}
+                            startIcon={<ArrowBackIcon/>}
+                            onClick={() => { history.goBack()}}>
+                                Back
+                        </Button>
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
                                 <TextField

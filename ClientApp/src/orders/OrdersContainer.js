@@ -2,55 +2,28 @@
 
 class OrdersContainer extends Container {
     state = {
-        _orders: [
-            {
-                OrderID: 0,
-                CustomerName: "Wayne Stewart",
-                DeliveryAddress: "25 Betway Road",
-                Total: "4000",
-                Currency: "R",
-                OrderDate: "31/1/2018",
-                OrderDetails:[
-                    { 
-                        Quantity: 500,
-                        Product: {
-                            ProductID: 3,
-                            ProductName: "Lawn block",
-                            UnitPrice: 250,
-                            UnitofMeasure: "Sq.m"
-                        }
-                    },
-                ]
-              },
-              {
-                OrderID: 0,
-                CustomerName: "John Barnes",
-                DeliveryAddress: "1 Leonora Drive",
-                Total: "4000",
-                Currency: "R",
-                OrderDate: "31/1/2018",
-                OrderDetails:[
-                    { 
-                        Quantity: 1000,
-                        Product: {
-                            ProductID: 3,
-                            ProductName: "Lawn block",
-                            UnitPrice: 250,
-                            UnitofMeasure: "Sq.m"
-                        }
-                    },
-                ]
-              }
-        ],
+        _orders: [],
         _selectedOrder: {},
         _currentPage: 0,
         _pageTotal: 0,
         _perPage: 5,
         _searchBy:"All",
         _searchTerm: "",
-        _orderBy: "Order ID_Asc"
+        _orderBy: "OrderID asc",
+        _navigation: false,
     }
 
+    _setNavigation = navigation => {
+        this.setState({
+            _navigation: navigation
+        })
+    }
+
+    _resetNavigation = () => {
+        this.setState({
+             _navigation: false
+        })
+    }
     
     _setSearchBy = searchBy => {
         this.setState({

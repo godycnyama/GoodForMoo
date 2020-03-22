@@ -30,6 +30,7 @@
     "react-toastify": "^5.5.0",
     "react-transition-group": "^4.3.0",
     "unstated": "^2.1.1",
+    "use-axios-hooks": "^1.0.3",
     "yup": "^0.28.1"
   },
   "scripts": {

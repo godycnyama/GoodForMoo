@@ -25,7 +25,7 @@ const Loading = (props) => {
         <DialogContent>
             <Box alignItems="center">
                 <img src={LoadingSpinner} alt="Logo"/>
-                <p style={{textAlign: 'center', color: "#2F2F4F",fontSize: "20px"}}>Loading...</p>
+                <p style={{textAlign: 'center', color: "#2F2F4F",fontSize: "20px"}}>Please wait...</p>
             </Box>
         </DialogContent>
       </Dialog>

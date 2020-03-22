@@ -56,7 +56,7 @@ const ConfirmDialog = (props) => {
 ConfirmDialog.propTypes = {
     onClose: PropTypes.func.isRequired,
     open: PropTypes.bool.isRequired,
-    confirmAlert: PropTypes.bool.isRequired,
+    confirmAlert: PropTypes.bool,
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
   };

@@ -10531,6 +10531,11 @@ url@^0.11.0:
     punycode "1.3.2"
     querystring "0.2.0"
 
+use-axios-hooks@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/use-axios-hooks/-/use-axios-hooks-1.0.3.tgz#5acc399219456c5cb702869ad9e7847d84f7e2e4"
+  integrity sha512-28rRck0kldsd8Yj+6rYBglo9kpdFwbKKAaoSl4sY49lYHFEECE/zVsC+gGGUkYlKQDjjzSsZujkOJZ5dLX2WjA==
+
 use-debounce@^3.1.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/use-debounce/-/use-debounce-3.3.0.tgz#f9c1f09d40ddbdf4306b80066b04bb5d46b6a904"

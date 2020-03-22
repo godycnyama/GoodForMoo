@@ -17,7 +17,8 @@ import {
     Formik, Form, Field, ErrorMessage,
   } from 'formik';
 import * as Yup from 'yup';
-import { TextField, Select } from 'formik-material-ui';
+//import { TextField, Select } from 'formik-material-ui';
+import TextField from '@material-ui/core/TextField';
 import NumberFormat from 'react-number-format';
 import Button from '@material-ui/core/Button';
 import AddIcon from '@material-ui/icons/Add';
@@ -26,10 +27,11 @@ import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
 import SearchIcon from '@material-ui/icons/Search';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-//import { BASE_URL } from '../shared/Constants';
+import { BASE_URL } from '../shared/Constants';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
+import { openToast } from '../utils/utility';
 import useAxios from 'axios-hooks';
 
 const useStyles = makeStyles({
@@ -46,15 +48,15 @@ const useStyles = makeStyles({
 
 const searchByOptions = [
     'All',
-    'Product ID',
-    'Product Name'
+    'ProductID',
+    'ProductName'
 ]
 
 const orderByOptions = [
-    'Product ID_Asc',
-    'Product ID_Desc',
-    'Product Name_Asc',
-    'Product Name_Desc'
+    'ProductID asc',
+    'ProductID desc',
+    'ProductName asc',
+    'ProductName desc'
 ]
 
 const Products = () => {
@@ -77,10 +79,14 @@ const Products = () => {
     const [loading, setLoading] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
   
-    const BASE_URL = `${window.location.protocol}//${window.location.host}` ;
+    //const BASE_URL = `${window.location.protocol}//${window.location.host}` ;
 
     const classes = useStyles();
     const history = useHistory();
+    let nextPage = "";
+    let currentPageProducts = [];
+    let previousPageProducts = [];
+    let navigation = false;
 
     const [{data: getData, loading: getLoading, error: getError}, executeGet] = useAxios({
       url: BASE_URL,
@@ -97,26 +103,33 @@ const Products = () => {
     });
 
     const getProducts = () => {
-      const query = {
-        SearchBy: searchBy,
-        SearchTerm: searchTerm,
-        OrderBy: orderBy,
-        PageNumber: currentPage,
-        PageSize: perPage
-      };
+     let searchAllUrl = `/api/products?$orderBy=${orderBy}&$top=${perPage}`;
+     let searchByUrlWithIntSearchTerm = `/api/products?$filter=${searchBy} eq ${searchTerm}&$orderBy=${orderBy}&$top=${perPage}`;
+     let searchByUrlWithTextSearchTerm = `/api/products?$filter=${searchBy} eq '${searchTerm}'&$orderBy=${orderBy}&$top=${perPage}`;
+     let odataUrl = "";
+      
+      if(searchBy === "All"){
+        odataUrl = searchAllUrl;
+      } 
+      
+      if (searchBy !== "All" && isNaN(searchTerm)){
+        odataUrl = searchByUrlWithTextSearchTerm;
+      }
+
+      if (searchBy !== "All" && !isNaN(searchTerm)){
+        odataUrl = searchByUrlWithIntSearchTerm; 
+      }
 
       executeGet({
         method: 'get',
-        url: BASE_URL + '/api/products',
-        data: {
-          ...query
-        }})
+        url: BASE_URL + odataUrl,
+        })
     }
 
-    const deleteProduct = (_product) => {
+    const deleteProduct = () => {
       executeDelete({
         method: 'delete',
-        url: BASE_URL + '/api/products/' + _product.productID ,
+        url: BASE_URL + `/api/products(${currentProduct.ProductID})`
         })
     }
     const openConfirmDialogDialog = () => {
@@ -154,9 +167,10 @@ const Products = () => {
         setAnchorEl0(null);
     }
 
-    const handleDeleteProduct = () => {
+    const handleDeleteProduct = (_product) => {
+      setCurrentProduct(_product);
       setConfirmDialogTitle('Delete Product');
-      setConfirmDialogDescription(`Are you sure you want to delete product with ID: ${currentProduct.productID}`);
+      setConfirmDialogDescription(`Are you sure you want to delete product with ID: ${_product.ProductID}`);
       openConfirmDialogDialog();
   }
 
@@ -166,22 +180,23 @@ const Products = () => {
   };
 
   if(getData){
-    setProducts(getData.data)
+    console.log(getData)
+    currentPageProducts = [...getData.value];
+    console.log(currentPageProducts);
   }
 
   if( getError ) {
-    setMessageDescription(getError.message);
-    setOpenMessage(true);
+    console.log(getError.response);
+    openToast("error", getError.response.data.message );
   } 
 
   if( deleteError ) {
-    setMessageDescription(deleteError.message);
-    setOpenMessage(true);
+    console.log(deleteError.response);
+    openToast("error", deleteError.response.data.message );
   } 
 
   if( deleteData ) {
-    setMessageDescription(deleteData.message);
-    setOpenMessage(true);
+    openToast("success", deleteData.message );
   } 
 
   
@@ -190,7 +205,7 @@ const Products = () => {
       <Transition>
           <Subscribe to = {[_ProductsContainer]}>
             {(productsStore) => {
-                const { state: {_products, _currentPage, _perPage, _pageTotal, _searchBy, _searchTerm, _orderBy }, 
+                const { state: {_products, _currentPage, _perPage, _pageTotal, _searchBy, _searchTerm, _orderBy, _navigation }, 
                 setSelectedProduct, 
                 _setProducts, 
                 _setCurrentPage,
@@ -198,34 +213,46 @@ const Products = () => {
                 _setPerPage,
                 _setSearchBy,
                 _setSearchTerm,
-                _setOrderBy } = productsStore;;
-                setProducts(_products);
+                _setOrderBy,
+                _setNavigation } = productsStore;
+
+                console.log(productsStore.state);
+                if(_navigation)
+                {
+                  currentPageProducts = [..._products];
+                  _setNavigation(false);
+                }
+
+                //setProducts(currentPageProducts);
                 setCurrentPage(_currentPage);
                 setPerPage(_perPage);
                 setPageTotal(_pageTotal);
+                setOrderBy(_orderBy);
 
-                const handleViewProduct = () => {
-                  _setProducts(products);
+                const handleViewProduct = (product) => {
+                  _setProducts(currentPageProducts);
                   _setCurrentPage(currentPage);
                   _setPerPage(perPage);
                   _setPageTotal(pageTotal);
                   _setSearchBy(searchBy);
                   _setSearchTerm(searchTerm);
                   _setOrderBy(orderBy);
-                  setSelectedProduct(currentProduct);
-                  history.push('/view-product');
+                  setSelectedProduct(product);
+                  _setNavigation(true);
+                  history.push('/view-product', {...product});
                 }
           
-                const handleEditProduct = () => {
-                  _setProducts(products);
+                const handleEditProduct = (product) => {
+                  _setProducts(currentPageProducts);
                   _setCurrentPage(currentPage);
                   _setPerPage(perPage);
                   _setPageTotal(pageTotal);
                   _setSearchBy(searchBy);
                   _setSearchTerm(searchTerm);
                   _setOrderBy(orderBy);
-                  setSelectedProduct(currentProduct);
-                  history.push('/update-product');
+                  setSelectedProduct(product);
+                  _setNavigation(true);
+                  history.push('/update-product', {...product});
                 }
 
                 return (
@@ -245,7 +272,7 @@ const Products = () => {
                               Add Product
                         </Button>
                         <Formik
-                            initialValues={{
+                          initialValues={{
                             searchBy: _searchBy,
                             searchTerm: _searchTerm,
                             orderBy: _orderBy
@@ -260,62 +287,85 @@ const Products = () => {
                           })}
 
                           onSubmit={(values) => {
+                            console.log('Search for products');
                             setSearchBy(values.searchBy);
                             setSearchTerm(values.searchTerm);
                             setOrderBy(values.orderBy);
-                          }}>
-                            {({submitForm, isSubmitting, values, dirty, setFieldValue}) => (
-                              <Form style={{margin: 15}}>
+                            getProducts();
+                          }}
+                      >
+                        {(props) => {
+                          const {
+                            values,
+                            touched,
+                            errors,
+                            dirty,
+                            isSubmitting,
+                            handleChange,
+                            handleBlur,
+                            handleSubmit,
+                            handleReset,
+                          } = props;
+                          return (
+                            <form onSubmit={handleSubmit} style={{margin: 15}} noValidate>
                                 <Grid container spacing={2}>
                                     <Grid item xs={4}>
-                                        <Field
-                                            type="text"
-                                            label="Search By"
-                                            select
-                                            name="searchBy"
-                                            component={TextField}
-                                            fullWidth
+                                      <TextField
+                                          label="Search By"
+                                          name="searchBy"
+                                          select
+                                          value={values.searchBy}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          helperText={(errors.searchBy && touched.searchBy) && errors.searchBy}
+                                          margin="normal"
+                                          fullWidth
                                         >
-                                            {searchByOptions.map((option, index) => (
-                                                <MenuItem key={index} value={option}>
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </Field> 
+                                        {searchByOptions.map((option, index) => (
+                                          <MenuItem key={index} value={option}>
+                                              {option}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
                                     </Grid>
                                     {values.searchBy !== "All" && (
                                         <Grid item xs={4}>
-                                            <Field
-                                                type="text"
-                                                label="Search Term"
-                                                name="searchTerm"
-                                                component={TextField}
-                                                fullWidth
-                                            />
+                                          <TextField
+                                            label="Search Term"
+                                            name="searchTerm"
+                                            value={values.searchTerm}
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            helperText={(errors.searchTerm && touched.searchTerm) && errors.searchTerm}
+                                            margin="normal"
+                                            fullWidth
+                                          />
                                         </Grid>
                                     )}
                                     <Grid item xs={4}>
-                                        <Field
-                                            type="text"
-                                            label="Order By"
-                                            select
-                                            name="orderBy"
-                                            component={TextField}
-                                            fullWidth
+                                      <TextField
+                                          label="Order By"
+                                          name="orderBy"
+                                          select
+                                          value={values.orderBy}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          helperText={(errors.orderBy && touched.orderBy) && errors.orderBy}
+                                          margin="normal"
+                                          fullWidth
                                         >
-                                            {orderByOptions.map((option, index) => (
-                                                <MenuItem key={index} value={option}>
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </Field> 
+                                        {orderByOptions.map((option, index) => (
+                                          <MenuItem key={index} value={option}>
+                                              {option}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
                                     </Grid>
                                     <Grid item xs={2}>
                                         <Button
                                             type="submit"
                                             variant="contained" 
                                             color="primary"
-                                            onClick={submitForm}
                                             style={{textTransform: 'none'}}
                                             startIcon={<SearchIcon/>}
                                         >
@@ -323,9 +373,10 @@ const Products = () => {
                                         </Button>
                                     </Grid>
                                 </Grid>
-                            </Form>
-                          )}
-                        </Formik>
+                            </form>
+                          );
+                        }}
+                      </Formik>
                         <br></br>
                         {products.length !== 0 &&(
                           <TablePagination
@@ -356,50 +407,36 @@ const Products = () => {
                                 </TableRow>      
                             </TableHead>
                             <TableBody>
-                            {products.map((row, index) => (
+                            {currentPageProducts.map((row, index) => (
                               <TableRow key={index}>
                                   <TableCell component="th" scope="row">
-                                    {row.productID}
+                                    {row.ProductID}
                                   </TableCell>
                                   <TableCell>
-                                    {row.productName}
+                                    {row.ProductName}
                                   </TableCell>
                                   <TableCell>
-                                    <NumberFormat thousandSeparator={true} decimalSeparator={'.'} decimalScale={2} value={row.unitPrice} displayType={'text'} prefix={row.currency} />
+                                    <NumberFormat thousandSeparator={true} decimalSeparator={'.'} decimalScale={2} value={row.UnitPrice} displayType={'text'} prefix={row.Currency} />
                                   </TableCell>
                                   <TableCell>
-                                    {row.unitOfMeasure}
+                                    {row.UnitOfMeasure}
                                   </TableCell>
-                                  <TableCell onClick={() => { setCurrentProduct(row)}}>
-                                    <IconButton aria-label="edit" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={handleActionsMenuClick}>
-                                      <MoreVertIcon/>
-                                    </IconButton>
-                                    <Menu
-                                      id="actions-menu"
-                                      anchorEl={anchorEl0}
-                                      keepMounted
-                                      open={Boolean(anchorEl0)}
-                                      onClose={handleActionsMenuClose}
-                                    >
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleViewProduct()}}>
-                                        <ListItemIcon>
-                                          <LaunchIcon/>
-                                        </ListItemIcon>
-                                        <Typography>View Product</Typography>
-                                      </MenuItem>
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleEditProduct()}}>
-                                        <ListItemIcon>
-                                          <EditIcon/>
-                                        </ListItemIcon>
-                                        <Typography>Update Product</Typography>
-                                      </MenuItem>
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleDeleteProduct()}}>
-                                        <ListItemIcon>
-                                            <DeleteIcon/>
-                                        </ListItemIcon>
-                                        <Typography>Delete Product</Typography>
-                                      </MenuItem>
-                                    </Menu>
+                                  <TableCell>
+                                    <Tooltip title="View product">
+                                      <IconButton aria-label="view" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {handleViewProduct(row)}}>
+                                        <LaunchIcon/>
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Update product">
+                                      <IconButton aria-label="update" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {handleEditProduct(row)}}>
+                                        <EditIcon/>
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete product">
+                                      <IconButton aria-label="delete" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {setCurrentProduct(row);handleDeleteProduct(row)}}>
+                                        <DeleteIcon/>
+                                      </IconButton>
+                                    </Tooltip>
                                   </TableCell>
                               </TableRow>
                             ))}
@@ -408,7 +445,7 @@ const Products = () => {
                         </Paper>
                         <ConfirmDialog confirmConfirmDialog={confirmConfirmDialog} open={openConfirmDialog} onClose={handleConfirmDialogClose} title={confirmDialogTitle} description={confirmDialogDescription} />
                         <MessageDialog confirmMessage={confirmMessage} open={openMessage} onClose={handleMessageClose}  description={messageDescription} />
-                        <Loading open={loading} />
+                        <Loading open={getLoading || deleteLoading} />
                       </Paper>
                     </Grid>
                   </Grid>

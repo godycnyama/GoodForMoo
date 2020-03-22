@@ -17,7 +17,8 @@ import {
     Formik, Form, Field,
   } from 'formik';
 import * as Yup from 'yup';
-import { TextField } from 'formik-material-ui';
+//import { TextField } from 'formik-material-ui';
+import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import LaunchIcon from '@material-ui/icons/Launch';
@@ -25,7 +26,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import DeleteIcon from '@material-ui/icons/Delete';
 import SearchIcon from '@material-ui/icons/Search';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-//import { BASE_URL } from '../shared/Constants';
+import { BASE_URL } from '../shared/Constants';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import MessageDialog from '../shared/MessageDialog';
 import Loading from '../shared/Loading';
@@ -47,21 +48,21 @@ const useStyles = makeStyles({
 
 const searchByOptions = [
     'All',
-    'Customer ID',
-    'Customer Name'
+    'CustomerID',
+    'CustomerName'
 ]
 
 const orderByOptions = [
-  'Customer ID_Asc',
-  'Customer ID_Desc',
-  'Customer Name_Asc',
-  'Customer Name_Desc'
+  'CustomerID asc',
+  'CustomerID desc',
+  'CustomerName asc',
+  'CustomerName desc'
 ]
 
 const Customers = () => {
     const [anchorEl0, setAnchorEl0] = useState(null);
-    const [searchBy, setSearchBy] = useState(null);
-    const [searchTerm, setSearchTerm] = useState(null);
+    const [searchBy, setSearchBy] = useState("All");
+    const [searchTerm, setSearchTerm] = useState("");
     const [orderBy, setOrderBy] = useState(null);
     const [customers, setCustomers] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
@@ -77,10 +78,15 @@ const Customers = () => {
     const [messageDescription, setMessageDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const BASE_URL = `${window.location.protocol}//${window.location.host}`
+    //const BASE_URL = `${window.location.protocol}//${window.location.host}`
 
     const classes = useStyles();
     const history = useHistory();
+
+    let nextPage = "";
+    let currentPageCustomers = [];
+    let previousPageCustomers = [];
+    let navigation = false;
 
     const [{data: getData, loading: getLoading, error: getError}, executeGet] = useAxios({
       url: BASE_URL,
@@ -97,26 +103,33 @@ const Customers = () => {
     });
 
     const getCustomers = () => {
-      const query = {
-        SearchBy: searchBy,
-        SearchTerm: searchTerm,
-        OrderBy: orderBy,
-        PageNumber: currentPage,
-        PageSize: perPage
-      };
+      let searchAllUrl = `/api/customers?$orderBy=${orderBy}&$top=${perPage}`;
+      let searchByUrlWithIntSearchTerm = `/api/customers?$filter=${searchBy} eq ${searchTerm}&$orderBy=${orderBy}&$top=${perPage}`;
+      let searchByUrlWithTextSearchTerm = `/api/customers?$filter=${searchBy} eq '${searchTerm}'&$orderBy=${orderBy}&$top=${perPage}`;
+      let odataUrl = "";
+      
+      if(searchBy === "All"){
+        odataUrl = searchAllUrl;
+      } 
+      
+      if (searchBy !== "All" && isNaN(searchTerm)){
+        odataUrl = searchByUrlWithTextSearchTerm;
+      }
+
+      if (searchBy !== "All" && !isNaN(searchTerm)){
+        odataUrl = searchByUrlWithIntSearchTerm; 
+      }
 
       executeGet({
         method: 'get',
-        url: BASE_URL + '/api/customers',
-        data: {
-          ...query
-        }})
+        url: BASE_URL + odataUrl,
+        })
     }
 
     const deleteCustomer = (_customer) => {
       executeDelete({
         method: 'delete',
-        url: BASE_URL + '/api/customers/' + _customer.customerID ,
+        url: BASE_URL + `/api/customers(${_customer.CustomerID})`,
         })
     }
     const openConfirmDialogDialog = () => {
@@ -154,9 +167,10 @@ const Customers = () => {
         setAnchorEl0(null);
     }
 
-    const handleDeleteCustomer = () => {
+    const handleDeleteCustomer = (_current) => {
+        setCurrentCustomer(_current);
         setConfirmDialogTitle('Delete Customer');
-        setConfirmDialogDescription(`Are you sure you want to delete customer with ID: ${currentCustomer.customerID}`);
+        setConfirmDialogDescription(`Are you sure you want to delete customer with ID: ${_current.CustomerID}`);
         openConfirmDialogDialog();
     }
 
@@ -167,17 +181,17 @@ const Customers = () => {
 
   
     if(getData){
-      setCustomers(getData.data)
+      currentPageCustomers = [...getData.value];
     }
 
     //if get error show alert
     if( getError ) {
-      openToast("error", getError.message );
+      openToast("error", getError.response.data.message );
     } 
 
     //if delete error show alert
     if( deleteError ) {
-      openToast("error", deleteError.message );
+      openToast("error", deleteError.response.data.message );
     } 
 
     //if delete success show alert
@@ -190,7 +204,7 @@ const Customers = () => {
       <Transition>
           <Subscribe to = {[_CustomersContainer]}>
             {(customersStore) => {
-                const { state: {_customers, _currentPage, _perPage, _pageTotal, _searchBy, _searchTerm, _orderBy }, 
+                const { state: {_customers, _currentPage, _perPage, _pageTotal, _searchBy, _searchTerm, _orderBy, _navigation }, 
                 setSelectedCustomer, 
                 _setCustomers, 
                 _setCurrentPage,
@@ -198,42 +212,52 @@ const Customers = () => {
                 _setPerPage,
                 _setSearchBy,
                 _setSearchTerm,
-                _setOrderBy } = customersStore;
-                setCustomers(_customers);
-                console.log(customers);
+                _setOrderBy,
+                _setNavigation } = customersStore;
+                
+                console.log()
+                console.log(customersStore.state);
+                if(_navigation)
+                {
+                  currentPageCustomers = [..._customers];
+                  _setNavigation(false);
+                }
                 setCurrentPage(_currentPage);
                 setPerPage(_perPage);
                 setPageTotal(_pageTotal);
+                setOrderBy(_orderBy);
 
-                const handleViewCustomer = () => {
-                  _setCustomers(customers);
+                const handleViewCustomer = (customer) => {
+                  _setCustomers(currentPageCustomers);
                   _setCurrentPage(currentPage);
                   _setPerPage(perPage);
                   _setPageTotal(pageTotal);
                   _setSearchBy(searchBy);
                   _setSearchTerm(searchTerm);
                   _setOrderBy(orderBy);
-                  setSelectedCustomer(currentCustomer);
-                  history.push('/view-customer');
+                  setSelectedCustomer(customer);
+                  _setNavigation(true);
+                  history.push('/view-customer', {...customer});
                 }
           
-                const handleEditCustomer = () => {
-                  _setCustomers(customers);
+                const handleEditCustomer = (customer) => {
+                  _setCustomers(currentPageCustomers);
                   _setCurrentPage(currentPage);
                   _setPerPage(perPage);
                   _setPageTotal(pageTotal);
                   _setSearchBy(searchBy);
                   _setSearchTerm(searchTerm);
                   _setOrderBy(orderBy);
-                  setSelectedCustomer(currentCustomer);
-                  history.push('/update-customer');
+                  setSelectedCustomer(customer);
+                  _setNavigation(true);
+                  history.push('/update-customer', {...customer});
                 }
           
                 
 
                 return (
                   <Grid container>
-                    <Grid item xs={8}>
+                    <Grid item xs={12}>
                       <Paper>
                         <Typography variant="h6" style={{margin: 15}} >
                             Customers
@@ -268,59 +292,76 @@ const Customers = () => {
                             setSearchBy(values.searchBy);
                             setSearchTerm(values.searchTerm);
                             setOrderBy(values.orderBy);
+                            getCustomers();
                           }}>
-                            {({submitForm, isSubmitting, values, dirty, setFieldValue}) => (
-                              <Form style={{margin: 15}}>
+                            {({values,
+                              touched,
+                              errors,
+                              dirty,
+                              isSubmitting,
+                              handleChange,
+                              handleBlur,
+                              handleSubmit,
+                              handleReset}) => (
+                              <form onSubmit={handleSubmit} style={{margin: 15}} noValidate>
                                 <Grid container spacing={2}>
                                     <Grid item xs={4}>
-                                        <Field
-                                            type="text"
-                                            label="Search By"
-                                            select
-                                            name="searchBy"
-                                            component={TextField}
-                                            fullWidth
+                                      <TextField
+                                          label="Search By"
+                                          name="searchBy"
+                                          select
+                                          value={values.searchBy}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          helperText={(errors.searchBy && touched.searchBy) && errors.searchBy}
+                                          margin="normal"
+                                          fullWidth
                                         >
-                                            {searchByOptions.map((option, index) => (
-                                                <MenuItem key={index} value={option}>
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </Field> 
+                                        {searchByOptions.map((option, index) => (
+                                          <MenuItem key={index} value={option}>
+                                              {option}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
                                     </Grid>
                                     {values.searchBy !== "All" && (
                                         <Grid item xs={4}>
-                                            <Field
-                                                type="text"
-                                                label="Search Term"
-                                                name="searchTerm"
-                                                component={TextField}
-                                                fullWidth
-                                            />
+                                          <TextField
+                                            label="Search Term"
+                                            name="searchTerm"
+                                            value={values.searchTerm}
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            helperText={(errors.searchTerm && touched.searchTerm) && errors.searchTerm}
+                                            margin="normal"
+                                            fullWidth
+                                          />
                                         </Grid>
                                     )}
                                     <Grid item xs={4}>
-                                        <Field
-                                            type="text"
-                                            label="Order By"
-                                            select
-                                            name="orderBy"
-                                            component={TextField}
-                                            fullWidth
+                                      <TextField
+                                          label="Order By"
+                                          name="orderBy"
+                                          select
+                                          value={values.orderBy}
+                                          onChange={handleChange}
+                                          onBlur={handleBlur}
+                                          helperText={(errors.orderBy && touched.orderBy) && errors.orderBy}
+                                          margin="normal"
+                                          fullWidth
                                         >
-                                            {orderByOptions.map((option, index) => (
-                                                <MenuItem key={index} value={option}>
-                                                    {option}
-                                                </MenuItem>
-                                            ))}
-                                        </Field> 
+                                        {orderByOptions.map((option, index) => (
+                                          <MenuItem key={index} value={option}>
+                                              {option}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
                                     </Grid>
                                     <Grid item xs={2}>
                                         <Button
                                             type="submit"
                                             variant="contained" 
                                             color="primary"
-                                            onClick={submitForm}
                                             style={{textTransform: 'none'}}
                                             startIcon={<SearchIcon/>}
                                         >
@@ -328,7 +369,7 @@ const Customers = () => {
                                         </Button>
                                     </Grid>
                                 </Grid>
-                            </Form>
+                            </form>
                           )}
                         </Formik>
                         <br></br>
@@ -364,7 +405,7 @@ const Customers = () => {
                                 </TableRow>      
                             </TableHead>
                             <TableBody>
-                            {customers.map((row, index) => (
+                            {currentPageCustomers.map((row, index) => (
                               <TableRow key={index}>
                                   <TableCell component="th" scope="row">
                                     {row.CustomerID}
@@ -373,7 +414,7 @@ const Customers = () => {
                                     {row.CustomerName}
                                   </TableCell>
                                   <TableCell>
-                                    <p>{row.Address}</p>
+                                    <p>{row.PhysicalAddress}</p>
                                     <p>{row.Town}</p>
                                     <p>{row.PostalCode}</p>
                                     <p>{row.Province}</p>
@@ -387,36 +428,22 @@ const Customers = () => {
                                   <TableCell>
                                     {row.Email}
                                   </TableCell>
-                                  <TableCell onClick={() => { setCurrentCustomer(row)}}>
-                                    <IconButton aria-label="edit" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={handleActionsMenuClick}>
-                                      <MoreVertIcon/>
-                                    </IconButton>
-                                    <Menu
-                                      id="actions-menu"
-                                      anchorEl={anchorEl0}
-                                      keepMounted
-                                      open={Boolean(anchorEl0)}
-                                      onClose={handleActionsMenuClose}
-                                    >
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleViewCustomer()}}>
-                                        <ListItemIcon>
-                                          <LaunchIcon/>
-                                        </ListItemIcon>
-                                        <Typography>View Customer</Typography>
-                                      </MenuItem>
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleEditCustomer()}}>
-                                        <ListItemIcon>
-                                          <EditIcon/>
-                                        </ListItemIcon>
-                                        <Typography>Update Customer</Typography>
-                                      </MenuItem>
-                                      <MenuItem onClick={() => { handleActionsMenuClose(); handleDeleteCustomer()}}>
-                                        <ListItemIcon>
-                                            <DeleteIcon/>
-                                        </ListItemIcon>
-                                        <Typography>Delete Customer</Typography>
-                                      </MenuItem>
-                                    </Menu>
+                                  <TableCell>
+                                    <Tooltip title="View customer">
+                                      <IconButton aria-label="view" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {handleViewCustomer(row)}}>
+                                        <LaunchIcon/>
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Update customer">
+                                      <IconButton aria-label="update" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {handleEditCustomer(row)}}>
+                                        <EditIcon/>
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Delete customer">
+                                      <IconButton aria-label="delete" aria-controls="actions-menu" aria-haspopup="true" color="inherit" onClick={() => {setCurrentCustomer(row);handleDeleteCustomer(row)}}>
+                                        <DeleteIcon/>
+                                      </IconButton>
+                                    </Tooltip>
                                   </TableCell>
                               </TableRow>
                             ))}
