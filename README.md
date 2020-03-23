@@ -1,7 +1,7 @@
 # GoodForMoo
 
 This is an order management system consisting of a back-end and front-end.The backend is based on ODATA RESTful API based on  ASP.Net Core 3.1
-with a MSSQL Server database.The database consists of 4 tables,namely Customers, Products, Orders, OrderDetails.Data access is based on Entity Framework 3.1.Entity Framework code first and migrations were used to design the database.
+with a MSSQL Server database.The database consists of 4 tables, namely Customers, Products, Orders, and OrderDetails.Data access is based on Entity Framework 3.1.Entity Framework code first and migrations were used to design the database.
 
 The front-end is React based and communicates with the back-end using ODATA.The client code resides in the ClientApp folder.
 To make the client work, CD into the ClientApp folder and run yarn install or npm install.Make sure node.js, yarn or npm is installed on you computer.To run the client, run yarn start or npm start.
